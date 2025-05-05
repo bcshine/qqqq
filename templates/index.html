@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>리더십 챗봇</title>
+    <style>
+        body { font-family: 'Malgun Gothic', Arial, sans-serif; background: #f5f6fa; }
+        #chatbox { width: 400px; margin: 40px auto; background: #fff; padding: 20px 0 20px 0; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);}
+        .header-bar {
+            display: flex;
+            flex-direction: column;
+            background: #1976d2;
+            border-radius: 16px 16px 0 0;
+            padding: 0 0 10px 0;
+            margin-bottom: 18px;
+        }
+        .header-top {
+            display: flex;
+            align-items: center;
+            padding: 16px 18px 0 18px;
+        }
+        .header-arrow {
+            font-size: 1.5em;
+            color: #fff;
+            margin-right: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .header-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3em;
+            margin-right: 10px;
+            border: 2px solid #1976d2;
+        }
+        .header-title {
+            font-size: 1.25em;
+            font-weight: bold;
+            color: #fff;
+            margin-right: 8px;
+        }
+        .header-dot {
+            width: 12px;
+            height: 12px;
+            background: #00e676;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+            margin-bottom: 2px;
+        }
+        .msg-row { display: flex; align-items: flex-end; margin-bottom: 12px; }
+        .msg.user { justify-content: flex-end; }
+        .msg.bot { justify-content: flex-start; }
+        .bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            margin: 0 8px;
+            font-size: 1em;
+            line-height: 1.5;
+            word-break: break-all;
+        }
+        .user .bubble { background: #e3f2fd; color: #1976d2; border-bottom-right-radius: 4px; }
+        .bot .bubble { background: #f1f1f1; color: #333; border-bottom-left-radius: 4px; }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; background: #e0f7fa; display: flex; align-items: center; justify-content: center; font-size: 1.5em; }
+        #messages { min-height: 300px; margin-bottom: 16px; }
+        #spinner { text-align:center; margin-bottom:10px; }
+        #input-row { display: flex; }
+        #user-input { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
+        #send-btn { margin-left: 8px; padding: 10px 18px; border-radius: 8px; border: none; background: #1976d2; color: #fff; font-weight: bold; cursor: pointer; }
+        .card {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 12px;
+            margin: 8px 0;
+            color: #1976d2;
+            font-size: 0.97em;
+            box-shadow: 0 1px 4px rgba(25,118,210,0.08);
+        }
+        .spinner {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            border: 4px solid #1976d2;
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 12px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="chatbox">
+        <div class="header-bar">
+            <div class="header-top">
+                <span class="header-arrow" onclick="goBack()">&#8592;</span>
+                <span class="header-avatar">🧑‍💼</span>
+                <span class="header-title">리더십 챗봇</span>
+                <span class="header-dot"></span>
+            </div>
+        </div>
+        <div id="messages"></div>
+        <div id="spinner" style="display:none;"></div>
+        <div id="input-row">
+            <input id="user-input" type="text" placeholder="메시지를 입력하세요..." autofocus>
+            <button id="send-btn" onclick="sendMessage()">전송</button>
+        </div>
+    </div>
+    <script>
+        function goBack() {
+            // 원하는 동작을 여기에 추가하세요. (예: 창 닫기)
+            alert('뒤로가기 버튼을 눌렀습니다.');
+        }
+        function sendMessage() {
+            const input = document.getElementById('user-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+            addMessage('user', msg);
+            input.value = '';
+            showSpinner();
+            fetch('/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: msg})
+            })
+            .then(res => res.json())
+            .then(data => {
+                hideSpinner();
+                addMessage('bot', data.response);
+            })
+            .catch(() => {
+                hideSpinner();
+                addMessage('bot', 'Error: 답변을 가져오지 못했습니다.');
+            });
+        }
+        function addMessage(role, text) {
+            const messages = document.getElementById('messages');
+            const row = document.createElement('div');
+            row.className = 'msg-row msg ' + role;
+            if (role === 'bot') {
+                // 챗봇 아바타 (남성 이모지)
+                const avatar = document.createElement('div');
+                avatar.className = 'avatar';
+                avatar.textContent = '🧑‍💼';
+                row.appendChild(avatar);
+            }
+            const bubble = document.createElement('div');
+            bubble.className = 'bubble';
+            // 카드형 정보 예시: 챗봇 답변에 특정 키워드가 있으면 카드로 변환
+            if (role === 'bot' && text.includes('채용정보')) {
+                bubble.innerHTML = `
+                    <div>고용 회원님이 알려주신<br>
+                    <b>희망임금:</b> 연봉 3,000만원<br>
+                    <b>희망지역:</b> 경기<br>
+                    <b>희망직종:</b> 웹기획<br>
+                    검색조건을 바탕으로 8건의 채용정보를 찾았어요!<br>
+                    </div>
+                    <div class="card">
+                        <b>구인회사: 내셔널유한책임회사</b><br>
+                        (웹기획/모바일앱기획) 웹화/변경 일러스트레이터<br>
+                        <b>연봉:</b> 3,000만원 ~ 3,200만원<br>
+                        <b>경기 성남시 분당구</b><br>
+                        <button style="margin-top:6px;background:#00bcd4;color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;">채용공고 확인</button>
+                    </div>
+                `;
+            } else {
+                bubble.textContent = text;
+            }
+            row.appendChild(bubble);
+            messages.appendChild(row);
+            messages.scrollTop = messages.scrollHeight;
+        }
+        function showSpinner() {
+            const spinner = document.getElementById('spinner');
+            spinner.innerHTML = '<div class="spinner"></div>';
+            spinner.style.display = 'block';
+        }
+        function hideSpinner() {
+            const spinner = document.getElementById('spinner');
+            spinner.innerHTML = '';
+            spinner.style.display = 'none';
+        }
+        document.getElementById('user-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html> 
