@@ -187,6 +187,26 @@
                 max-width: 80%;
             }
         }
+        #leadership-lesson-btn-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            margin-top: 10px;
+            padding: 0;
+            min-height: 0;
+            height: auto;
+        }
+        #leadership-lesson-btn {
+            border: 3px solid #222;
+            background: #fff;
+            font-size: 1em;
+            padding: 8px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: inline-block;
+            box-sizing: border-box;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.10), 0 0 0 6px #fff;
+        }
     </style>
 </head>
 <body>
@@ -201,7 +221,11 @@
                 <span class="header-dot"></span>
             </div>
         </div>
-        <div id="messages"></div>
+        <div id="messages">
+            <div id="leadership-lesson-btn-container">
+                <button id="leadership-lesson-btn">오늘의 리더십 교훈</button>
+            </div>
+        </div>
         <div id="spinner" style="display:none;"></div>
         <div id="input-row">
             <input id="user-input" type="text" placeholder="메시지를 입력하세요..." autofocus>
@@ -212,17 +236,31 @@
         function goBack() {
             window.history.back();
         }
-        function sendMessage() {
+        function hideLeadershipLessonBtn() {
+            const btnContainer = document.getElementById('leadership-lesson-btn-container');
+            if (btnContainer) btnContainer.style.display = 'none';
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('leadership-lesson-btn');
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    sendMessage('오늘의 리더십 교훈 알려줘');
+                    hideLeadershipLessonBtn();
+                });
+            }
+        });
+        function sendMessage(msg) {
             const input = document.getElementById('user-input');
-            const msg = input.value.trim();
-            if (!msg) return;
-            addMessage('user', msg);
-            input.value = '';
+            const message = msg !== undefined ? msg : input.value.trim();
+            if (!message) return;
+            addMessage('user', message);
+            if (input) input.value = '';
+            hideLeadershipLessonBtn();
             showSpinner();
             fetch('/chat', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({message: msg})
+                body: JSON.stringify({message: message})
             })
             .then(res => res.json())
             .then(data => {
@@ -244,6 +282,7 @@
             return text.trim();
         }
         function addMessage(role, text) {
+            hideLeadershipLessonBtn();
             const messages = document.getElementById('messages');
             const row = document.createElement('div');
             row.className = 'msg-row msg ' + role;
